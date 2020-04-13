@@ -4,7 +4,7 @@ This is a small collection of code accumulated over the years, from other projec
 
 Note: none of this is for async/await, at least at this point (2020.04).
 
-To use: add as singeltons in `Startup.cs`.
+To use: add as singletons in `Startup.cs`.
 
 TODO: These should really use a common interface...
 
