@@ -71,9 +71,6 @@ namespace CacheManagement
         /// Remove a cached item from the cache
         /// </summary>
         /// <param name="key">The key for the item in the cache (make it specific)</param>
-        public void RemoveCacheEntry(string key)
-        {
-            Cache.Remove(key);
-        }
+        public void RemoveCacheEntry(string key) => Cache.Remove(key);
     }
 }

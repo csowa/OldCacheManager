@@ -58,20 +58,14 @@ namespace CacheManagement
 		/// unregister an existing managed item
 		/// </summary>
 		/// <param name="key"></param>
-		public void UnregisterItem(string key)
-		{
-			CacheRegistry.TryRemove(key, out _);
-		}
+		public void UnregisterItem(string key) => CacheRegistry.TryRemove(key, out _);
 
 		/// <summary>
 		/// check if a cache registration exists for a key
 		/// </summary>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public bool IsRegistered(string key)
-		{
-			return CacheRegistry.ContainsKey(key);
-		}
+		public bool IsRegistered(string key) => CacheRegistry.ContainsKey(key);
 
 		/// <summary>
 		/// check if an item is still in the cache

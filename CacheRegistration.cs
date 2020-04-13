@@ -141,10 +141,7 @@ namespace CacheManagement
 		/// </summary>
 		/// <param name="message"></param>
 		/// <param name="exc"></param>
-		private void Trace(string message, Exception exc)
-		{
-			Logger.LogTrace(exc, $"CacheRegistration [{ThreadId}]-[{KeyName}] {message}");
-		}
+		private void Trace(string message, Exception exc) => Logger.LogTrace(exc, $"CacheRegistration [{ThreadId}]-[{KeyName}] {message}");
 
 		/// <summary>
 		/// base class for cacheregistration child classes; provides access to parent
