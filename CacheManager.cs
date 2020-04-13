@@ -1,127 +1,76 @@
 using System;
-using System.Collections;
-using System.Web;
+using Microsoft.Extensions.Caching.Memory;
 
-namespace TopLevelNamespace.Utility.CacheManager
+namespace RDI.Core.Utilities
 {
-	/// <summary>
-	/// Common application-wide functionality for cached item management.
-	/// </summary>
-	public class CacheManager
-	{
+    /// <summary>
+    /// Handle concurrent cache access and value initialization.
+    /// </summary>
+    /// <remarks>
+    /// This is just rudimentary handling of concurrent cache loading semantics.  
+    /// For actual cache *management*, need to also deal with the full lifecycle of cached items,
+    /// including cache eviction and invalidation, and maybe also centrally storing
+    /// information about what's in the cache.  Will leave this aside for now; implement when needed.
+    /// <para/>Better is to start doing something with distributed cache systems (redis, memcache, etc.)
+    /// </remarks>
+    public class CacheManager
+    {
+        /// <summary>Access to injected instance of <see cref="MemoryCache"/> used by <see cref="CacheManager"/></summary>
+        public IMemoryCache Cache { get; }
 
-		/// <summary>
-		/// delegate called to load registered cache item
-		/// </summary>
-		public delegate object CacheItemLoader();
+        public CacheManager(IMemoryCache memoryCache)
+        {
+            Cache = memoryCache;
+        }
 
-		/// <summary>
-		/// all registered cache items to manage (key, CacheRegistration)
-		/// </summary>
-		private static Hashtable htRegisteredCacheItems = new Hashtable();
+        /// <summary>
+        /// Get or add the cache entry identified by <paramref name="key"/>, 
+        /// initializing it with <paramref name="valueFactory"/> if needed,
+        /// and using <paramref name="cachePolicy"/>.
+        /// </summary>
+        /// <typeparam name="T">Stored value type</typeparam>
+        /// <param name="key">Cache key</param>
+        /// <param name="valueFactory">Value initializer method</param>
+        /// <param name="cachePolicy">Cache policy</param>
+        /// <returns>Value that was cached (newly created if needed)</returns>
+        /// <remarks>
+        /// Modern approach.
+        /// <para/>
+        /// Informed by https://medium.com/falafel-software/working-with-system-runtime-caching-memorycache-9f8548172ccd
+        /// and https://github.com/alastairtree/LazyCache .
+        /// </remarks>
+        public T AddOrGetExisting<T>(string key, Func<T> valueFactory, MemoryCacheEntryOptions cacheOptions)
+        {
+            if (cacheOptions is null)
+            {
+                throw new ArgumentNullException(nameof(cacheOptions));
+            }
 
-		public CacheManager() {} 
+            var lazyCacheEntry = Cache.GetOrCreate(key, cacheEntry =>
+            {
+                cacheEntry.SetOptions(cacheOptions);
+                return new Lazy<T>(valueFactory);
+            });
 
-		/// <summary>
-		/// register a (new) item to be managed
-		/// </summary>
-		/// <remarks>
-		/// 2007.08.23, css: 
-		/// old intent: overwrites any existing item with the same key.
-		/// this was never done properly in the first place. 
-		/// in any case, it seems best to use semantics where a cache 
-		/// registration is never overwritten, instead forcing an
-		/// explicit "unregister" first.
-		/// </remarks>
-		/// <param name="crItem"></param>
-		public static void RegisterItem( CacheRegistration crItem )
-		{
-			htRegisteredCacheItems.Add( crItem.KeyName, crItem );
-			HttpContext.Current.Trace.Write( "CacheManager", "Cache item registered: " + crItem.KeyName );
-		}
+            try
+            {
+                return lazyCacheEntry.Value;
+            }
+            catch
+            {
+                // Handle cached lazy exception by evicting from cache.
+                Cache.Remove(key);
+                throw;
+            }
+        }
 
-		/// <summary>
-		/// retrieve a managed cache registration
-		/// </summary>
-		/// <param name="strKey"></param>
-		/// <returns></returns>
-		public static CacheRegistration GetRegistrationItem( string strKey )
-		{
-			return (CacheRegistration) htRegisteredCacheItems[ strKey ];
-		}
-
-		/// <summary>
-		/// unregister an existing managed item
-		/// </summary>
-		/// <param name="strKey"></param>
-		public static void UnregisterItem( string strKey )
-		{
-			htRegisteredCacheItems.Remove( strKey );
-		}
-
-		/// <summary>
-		/// check if a cache registration exists for a key
-		/// </summary>
-		/// <param name="strKey"></param>
-		/// <returns></returns>
-		public static bool IsRegistered( string strKey )
-		{
-			return htRegisteredCacheItems.ContainsKey( strKey );
-		}
-		
-		/// <summary>
-		/// check if an item is still in the cache
-		/// </summary>
-		/// <param name="strKey"></param>
-		/// <returns></returns>
-		public static bool IsValid( string strKey )
-		{
-			return GetRegistrationItem( strKey ).IsValid;
-		}
-
-		/// <summary>
-		/// get value of previously registered item, re-loading if necessary
-		/// </summary>
-		/// <param name="strKey"></param>
-		/// <returns></returns>
-		public static object GetItem( string strKey )
-		{
-			return GetItem( GetRegistrationItem( strKey ) );
-		}
-
-		/// <summary>
-		/// get value of item described by a CacheRegistration object
-		/// </summary>
-		/// <remarks>
-		/// useful for handling (unregistered) instance loaders (as opposed to static ones)
-		/// </remarks>
-		/// <param name="crItem"></param>
-		/// <returns></returns>
-		public static object GetItem( CacheRegistration crItem )
-		{
-			return crItem.GetValue();
-		}
-
-		/// <summary>
-		/// invalidate specified cache item; no arg = invalidate all
-		/// </summary>
-		/// <remarks>
-		/// the cached item will be reloaded at next "get"
-		/// </remarks>
-		/// <param name="strKey"></param>
-		public static void Invalidate( string strKey )
-		{
-			GetRegistrationItem( strKey ).Invalidate();
-		}
-
-		/// <summary>
-		/// invalidate all registered cached items
-		/// </summary>
-		public static void Invalidate()
-		{
-			foreach ( string strKey in htRegisteredCacheItems.Keys )
-				Invalidate( strKey );
-		}
-
-	}
+        /// <summary>
+        /// Remove a cached item from the cache
+        /// </summary>
+        /// <param name="key">The key for the item in the cache (make it specific)</param>
+        public void RemoveCacheEntry(string key)
+        {
+            Cache.Remove(key);
+        }
+    }
 }
