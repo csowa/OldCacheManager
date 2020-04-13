@@ -2,25 +2,28 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace TopLevelNamespace.Utility.CacheManager
+namespace CacheManagement
 {
 	/// <summary>
 	/// Common application-wide functionality for cached item management.
 	/// </summary>
 	public class CacheRegister
 	{
+		public static CacheRegister Current { get; private set; }
+
 		/// <summary>
 		/// all registered cache items to manage (key, CacheRegistration)
 		/// </summary>
 		public ConcurrentDictionary<string, CacheRegistration> CacheRegistry { get; } = new ConcurrentDictionary<string, CacheRegistration>();
 
-		public ILogger<CacheRegister> Logger { get; set; }
-		public IMemoryCache MemoryCache { get; set; }
+		private ILogger<CacheRegister> Logger { get; set; }
+		private IMemoryCache MemoryCache { get; set; }
 
 		public CacheRegister(ILogger<CacheRegister> logger, IMemoryCache memoryCache)
 		{
 			Logger = logger;
 			MemoryCache = memoryCache;
+			Current = this;
 		}
 
 		/// <summary>

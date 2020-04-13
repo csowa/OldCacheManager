@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace RDI.Core.Utilities
+namespace CacheManagement
 {
     /// <summary>
     /// Handle concurrent cache access and value initialization.
@@ -15,12 +15,15 @@ namespace RDI.Core.Utilities
     /// </remarks>
     public class CacheManager
     {
+        public static CacheManager Current { get; private set; }
+
         /// <summary>Access to injected instance of <see cref="MemoryCache"/> used by <see cref="CacheManager"/></summary>
         public IMemoryCache Cache { get; }
 
         public CacheManager(IMemoryCache memoryCache)
         {
             Cache = memoryCache;
+            Current = this;
         }
 
         /// <summary>

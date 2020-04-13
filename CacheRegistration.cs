@@ -4,13 +4,13 @@ using System.Threading;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace TopLevelNamespace.Utility.CacheManager
+namespace CacheManagement
 {
 	/// <summary>
-	/// Contains parameters for a cachemanager registered cache item
+	/// Contains parameters for a <see cref="CacheRegister"/> registered cache item
 	/// </summary>
 	/// <remarks>
-	/// cachemanager (may) track (key, (this)) in a private hashtable field; 
+	/// <see cref="CacheRegister"/> (may) track (key, (this)) in a dictionary; 
 	/// may not derive from this class.
 	/// <seealso cref="CacheRegister"/>
 	/// </remarks>
@@ -25,7 +25,7 @@ namespace TopLevelNamespace.Utility.CacheManager
 		public Func<object> Loader { get; set; }
 
 		/// <summary>
-		/// (read only) absolute expiration timespan (add to "now")
+		/// (read only) absolute expiration timespan (relative to "now")
 		/// </summary>
 		public TimeSpan Absolute { get; }
 
@@ -66,10 +66,10 @@ namespace TopLevelNamespace.Utility.CacheManager
 
 		/// <summary>
 		/// create new item for cachemanager.
-		/// <see cref="System.Web.Caching"/> for more info on some parameters.
+		/// <see cref="Microsoft.Extensions.Caching.Memory"/> for more info on some parameters.
 		/// </summary>
 		/// <param name="key"></param>
-		/// <param name="loader"><see cref="CacheRegister.CacheItemLoader"/></param>
+		/// <param name="loader"></param>
 		/// <param name="absolute"></param>
 		/// <param name="sliding"></param>
 		/// <param name="priority"></param>
@@ -84,7 +84,7 @@ namespace TopLevelNamespace.Utility.CacheManager
 			Cache = new CacheValue(this);
 			Synch = new CacheLock(this);
 
-			Trace("Created");
+			//Trace("Created");
 		}
 
 		/// <summary>
